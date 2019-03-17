@@ -1,0 +1,86 @@
+# Collaborated with Danny Lu, sources used: https://github.com/malaura/Bubblesort/blob/master/bubblesort.ys
+
+
+.pos 0 
+init:	
+    irmovl Stack, %esp  	# Set up stack pointer  
+	irmovl Stack, %ebp  	# Set up base pointer   
+	call Main		# Execute main program
+	halt			# Terminate program 
+
+# Array of 10 elements
+	.pos 0x104      # Place array at this address
+	.align 4 	
+array:	
+    .long 0x0005
+	.long 0x0004
+	.long 0x0008
+	.long 0x0002
+	.long 0x0001
+	.long 0x0009
+	.long 0x0007
+	.long 0x0003
+	.long 0x0006
+	.long 0x0010
+
+Main:	
+    pushl %ebp 
+	rrmovl %esp, %ebp
+	irmovl $10, %eax	
+	pushl %eax		    # Push 10 for size of array
+	irmovl array, %edx
+	pushl %edx      	# Push array
+    call BubbleSort	    # bubbleSort(array, 10)
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret 
+
+BubbleSort:
+    pushl %ebp
+    rrmovl %esp, %ebp
+    mrmovl 8(%ebp), %ecx    # Location of array  
+    mrmovl 12(%ebp), %edx   # Size of array (10), counter for outer loop
+    irmovl $0, %eax
+    andl %edx, %edx         # When the counter is 0, call finish
+    je Finish
+    #mrmovl (%ecx), %esi    # This is how array values are accessed (4)
+    #mrmovl 4(%ecx), %edi   # 5
+    
+LoopOuter:
+    mrmovl 8(%ebp), %ecx    # Beginning of array
+    irmovl $-1, %ebx        # Decrementing value
+    mrmovl (%ecx), %edi     # Place first element of array in edi
+    mrmovl 4(%ecx), %esi    # Place element + 1 in esi
+    irmovl $0, %eax         # Place 0 in eax, this is the counter for the inner loop
+    addl %ebx, %edx         # Decrement outer loop
+    jne LoopInner           # If edx isn't 0, go to inner loop
+    jmp LoopOuter
+    
+LoopInner:
+    irmovl $1, %ebx         # Incrementing by 1
+    addl %ebx, %eax         # Increment inner loop counter
+    rrmovl %edi, %ebx       # Use ebx as temporary storage for edi
+    subl %esi, %ebx         # Can also use pushl %edi -> subl %esi, %edi -> jg NoSwap -> popl %esi, (like cmpl)
+    jle NoSwap              # If less than 0, no need to swap
+    rrmovl %edi, %ebx       # Else, swap the indices
+    rmmovl %ebx, 4(%ecx)    # Value in ebx now A[i+1]
+    rmmovl %esi, (%ecx)     # Value in esi now A[i]
+    jmp NoSwap
+    
+NoSwap:
+    rrmovl %edx, %ebx       # Place current outer counter in ebx
+    subl %eax, %ebx         # Check that outer and inner counter not equal
+    je LoopOuter
+    irmovl $4, %ebx         # Put 4 in ebx to find next array value in memory
+    addl %ebx, %ecx         # Next array value
+    mrmovl (%ecx), %edi     # Update edi with next value
+    mrmovl 4(%ecx), %esi    # Update esi with i+1 value
+    jmp LoopInner
+    
+Finish:
+    rrmovl %ebp, %esp
+    popl %ebp
+    ret
+
+	.pos 0x100		
+Stack:	 
